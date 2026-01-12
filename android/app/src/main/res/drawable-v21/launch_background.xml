@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Native splash screen - hanya background gradient, tanpa logo -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="135"
+                android:startColor="#1E3A8A"
+                android:centerColor="#2563EB"
+                android:endColor="#60A5FA"
+                android:type="linear" />
+        </shape>
+    </item>
+</layer-list>

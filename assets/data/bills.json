@@ -1,0 +1,20 @@
+[
+  {
+    "id": "bill_pln",
+    "title": "Tagihan Listrik PLN",
+    "detail": "Jatuh tempo listrik rumah bulan ini",
+    "dueDate": "2025-10-12T00:00:00Z"
+  },
+  {
+    "id": "bill_internet",
+    "title": "Tagihan Internet",
+    "detail": "Pembayaran Indihome 50 Mbps",
+    "dueDate": "2025-10-18T00:00:00Z"
+  },
+  {
+    "id": "bill_cc",
+    "title": "Tagihan Kartu Kredit",
+    "detail": "Minimal payment kartu kredit BCA",
+    "dueDate": "2025-10-22T00:00:00Z"
+  }
+]

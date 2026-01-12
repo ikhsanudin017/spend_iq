@@ -1,0 +1,182 @@
+[
+  {
+    "id": "tx_001",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-01T08:25:00Z",
+    "amount": 450000,
+    "category": "Groceries",
+    "merchant": "Super Indo",
+    "note": "Weekly groceries"
+  },
+  {
+    "id": "tx_002",
+    "accountId": "acc_bca",
+    "date": "2025-10-02T11:45:00Z",
+    "amount": 1200000,
+    "category": "Bills",
+    "merchant": "PLN",
+    "note": "Electricity bill"
+  },
+  {
+    "id": "tx_003",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-03T19:20:00Z",
+    "amount": 275000,
+    "category": "Dining",
+    "merchant": "Warung Kita",
+    "note": null
+  },
+  {
+    "id": "tx_004",
+    "accountId": "acc_bri",
+    "date": "2025-10-04T07:10:00Z",
+    "amount": 950000,
+    "category": "Transport",
+    "merchant": "Pertamina",
+    "note": "Fuel"
+  },
+  {
+    "id": "tx_005",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-05T09:15:00Z",
+    "amount": 650000,
+    "category": "Groceries",
+    "merchant": "Hypermart",
+    "note": null
+  },
+  {
+    "id": "tx_006",
+    "accountId": "acc_bca",
+    "date": "2025-10-06T12:30:00Z",
+    "amount": -15000000,
+    "category": "Income",
+    "merchant": "PT Maju Jaya",
+    "note": "Salary"
+  },
+  {
+    "id": "tx_007",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-07T17:45:00Z",
+    "amount": 310000,
+    "category": "Dining",
+    "merchant": "Sushi Tei",
+    "note": null
+  },
+  {
+    "id": "tx_008",
+    "accountId": "acc_bri",
+    "date": "2025-10-08T14:05:00Z",
+    "amount": 480000,
+    "category": "Entertainment",
+    "merchant": "Netflix",
+    "note": "Subscription"
+  },
+  {
+    "id": "tx_009",
+    "accountId": "acc_bca",
+    "date": "2025-10-09T06:55:00Z",
+    "amount": 2200000,
+    "category": "Bills",
+    "merchant": "Indihome",
+    "note": "Internet"
+  },
+  {
+    "id": "tx_010",
+    "accountId": "acc_bri",
+    "date": "2025-10-10T16:35:00Z",
+    "amount": 125000,
+    "category": "Transport",
+    "merchant": "Grab",
+    "note": null
+  },
+  {
+    "id": "tx_011",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-11T10:05:00Z",
+    "amount": 980000,
+    "category": "Health",
+    "merchant": "Apotek Sehat",
+    "note": null
+  },
+  {
+    "id": "tx_012",
+    "accountId": "acc_bca",
+    "date": "2025-10-12T13:50:00Z",
+    "amount": 340000,
+    "category": "Dining",
+    "merchant": "Starbucks",
+    "note": null
+  },
+  {
+    "id": "tx_013",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-13T08:40:00Z",
+    "amount": 4500000,
+    "category": "Loans",
+    "merchant": "BCA Finance",
+    "note": "Car installment"
+  },
+  {
+    "id": "tx_014",
+    "accountId": "acc_bri",
+    "date": "2025-10-14T20:10:00Z",
+    "amount": 150000,
+    "category": "Entertainment",
+    "merchant": "Spotify",
+    "note": null
+  },
+  {
+    "id": "tx_015",
+    "accountId": "acc_bca",
+    "date": "2025-10-15T18:25:00Z",
+    "amount": 720000,
+    "category": "Groceries",
+    "merchant": "Supermarket",
+    "note": "Fresh produce"
+  },
+  {
+    "id": "tx_016",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-16T07:30:00Z",
+    "amount": 850000,
+    "category": "Bills",
+    "merchant": "PAM",
+    "note": "Water bill"
+  },
+  {
+    "id": "tx_017",
+    "accountId": "acc_bri",
+    "date": "2025-10-17T09:55:00Z",
+    "amount": 290000,
+    "category": "Transport",
+    "merchant": "MRT Jakarta",
+    "note": null
+  },
+  {
+    "id": "tx_018",
+    "accountId": "acc_bca",
+    "date": "2025-10-18T15:05:00Z",
+    "amount": 650000,
+    "category": "Dining",
+    "merchant": "Bakmi GM",
+    "note": null
+  },
+  {
+    "id": "tx_019",
+    "accountId": "acc_mandiri",
+    "date": "2025-10-19T21:10:00Z",
+    "amount": 420000,
+    "category": "Entertainment",
+    "merchant": "Cinema XXI",
+    "note": "Movie night"
+  },
+  {
+    "id": "tx_020",
+    "accountId": "acc_bri",
+    "date": "2025-10-20T08:00:00Z",
+    "amount": -2000000,
+    "category": "Income",
+    "merchant": "Freelance",
+    "note": "Project payment"
+  }
+]
