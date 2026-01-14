@@ -6,6 +6,7 @@ import '../../../core/constants/colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/utils/currency.dart';
 import '../../../core/utils/date.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../domain/entities/autosave_plan.dart';
 import '../../../domain/usecases/toggle_autosave.dart';
 import '../../../providers/accounts_home_providers.dart';
@@ -65,13 +66,16 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
   Widget build(BuildContext context) {
     final autosave = ref.watch(autosaveControllerProvider);
     final theme = Theme.of(context);
+    final responsive = ResponsiveUtils(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(        title: const Text('Auto-Saving Adaptif'),
+      appBar: AppBar(
+        title: const Text('Auto-Saving Adaptif'),
         centerTitle: true,
         actions: [
-          IconButton(            tooltip: 'Profil',
+          IconButton(
+            tooltip: 'Profil',
             icon: const Icon(Icons.person_outline),
             onPressed: () => context.push(AppRoute.profile.path),
           ),
@@ -91,7 +95,12 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  padding: EdgeInsets.fromLTRB(
+                    responsive.hp(2.5),
+                    responsive.hp(2),
+                    responsive.hp(2.5),
+                    responsive.hp(3),
+                  ),
                   children: [
                     _AutosaveHeroCard(
                       enabled: data.enabled,
@@ -151,13 +160,47 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                           ];
                         });
                       },
-                      onRemove: (index) {
-                        setState(() {
-                          _plans = [
-                            ..._plans.take(index),
-                            ..._plans.skip(index + 1),
-                          ];
-                        });
+                      onRemove: (index) async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Hapus Jadwal?'),
+                            content: Text(
+                              'Yakin ingin menghapus jadwal ${DateUtilsX.formatFull(_plans[index].date)}?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Batal'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Theme.of(context).colorScheme.error,
+                                ),
+                                child: const Text('Hapus'),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmed == true) {
+                          setState(() {
+                            _plans = [
+                              ..._plans.take(index),
+                              ..._plans.skip(index + 1),
+                            ];
+                          });
+                          
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Jadwal berhasil dihapus'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
                       },
                       onAddPlan: () {
                         setState(() {
@@ -183,7 +226,12 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                 ),
               ),
               SafeArea(
-                minimum: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                minimum: EdgeInsets.fromLTRB(
+                  responsive.hp(2.5),
+                  responsive.hp(1.5),
+                  responsive.hp(2.5),
+                  responsive.hp(3),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -206,14 +254,22 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                             ),
                           ]..sort((a, b) => a.date.compareTo(b.date));
                         });
+                        
+                        // Show feedback
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Jadwal baru ditambahkan'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.add_rounded),
                       label: const Text('Tambah Jadwal'),
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
+                        minimumSize: Size.fromHeight(responsive.hp(6.5)),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: responsive.hp(1.5)),
                     Builder(
                       builder: (context) {
                         final totalBalance = ref.watch(totalBalanceProvider);
@@ -222,13 +278,37 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                         
                         return FilledButton(
                           style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(56),
+                            minimumSize: Size.fromHeight(responsive.hp(7)),
                             backgroundColor: canSave 
                                 ? theme.colorScheme.primary
                                 : theme.colorScheme.error,
                           ),
                           onPressed: canSave
-                              ? () => _handleStartAutosave(monthlyTotal)
+                              ? () {
+                                  _handleStartAutosave(monthlyTotal);
+                                  // Show loading indicator briefly
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                theme.colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          const Text('Menyimpan rencana autosave...'),
+                                        ],
+                                      ),
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                }
                               : null,
                           child: Text(
                             data.enabled 
@@ -236,6 +316,7 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                                 : _plans.isEmpty
                                     ? 'Tambahkan Jadwal Terlebih Dahulu'
                                     : 'Simpan Rencana Autosave',
+                            style: TextStyle(fontSize: responsive.sp(2)),
                           ),
                         );
                       },
@@ -310,6 +391,8 @@ class _AutosaveHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final responsive = ResponsiveUtils(context);
+    
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -329,7 +412,7 @@ class _AutosaveHeroCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(responsive.hp(3)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -574,6 +657,7 @@ class _PlansSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final responsive = ResponsiveUtils(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,11 +668,11 @@ class _PlansSection extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: responsive.hp(1.5)),
         if (plans.isEmpty)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(responsive.hp(2.5)),
             decoration: BoxDecoration(
               color: AppColors.surfaceAlt,
               borderRadius: BorderRadius.circular(20),
@@ -606,8 +690,8 @@ class _PlansSection extends StatelessWidget {
               final formattedDate = DateUtilsX.formatFull(plan.date);
 
               return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(18),
+                margin: EdgeInsets.only(bottom: responsive.hp(2)),
+                padding: EdgeInsets.all(responsive.hp(2.2)),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
@@ -626,18 +710,18 @@ class _PlansSection extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: EdgeInsets.all(responsive.hp(1.2)),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withAlpha(32),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.calendar_today_rounded,
                             color: AppColors.primary,
-                            size: 20,
+                            size: responsive.hp(2.5),
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        SizedBox(width: responsive.hp(1.7)),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,14 +742,18 @@ class _PlansSection extends StatelessWidget {
                             ],
                           ),
                         ),
-                        IconButton(
+                        IconButton.filled(
                           tooltip: 'Hapus jadwal',
+                          style: IconButton.styleFrom(
+                            backgroundColor: theme.colorScheme.errorContainer,
+                            foregroundColor: theme.colorScheme.error,
+                          ),
                           onPressed: () => onRemove(index),
                           icon: const Icon(Icons.delete_outline_rounded),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: responsive.hp(2)),
                     TextFormField(
                       key: ValueKey(
                         '${plan.date.toIso8601String()}-${plan.confirmed}',
@@ -674,6 +762,9 @@ class _PlansSection extends StatelessWidget {
                       decoration: const InputDecoration(
                         labelText: 'Nominal tabungan',
                         prefixText: 'Rp ',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                       ),
                       keyboardType: TextInputType.number,
                       onChanged: (value) {
@@ -685,7 +776,7 @@ class _PlansSection extends StatelessWidget {
                         onAmountChanged(index, parsed);
                       },
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: responsive.hp(1.5)),
                     Row(
                       children: [
                         Checkbox.adaptive(
