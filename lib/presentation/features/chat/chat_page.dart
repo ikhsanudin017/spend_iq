@@ -555,6 +555,69 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 ),
               ),
               
+              // Quick Ask Chips - Horizontal Scrollable
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  verticalSpacing,
+                  horizontalPadding,
+                  verticalSpacing,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        'Skor kesehatan finansial?',
+                        'Forecast belanja minggu ini',
+                        'Tagihan terdekat',
+                        'Rekomendasi menabung',
+                      ]
+                          .map((text) => Padding(
+                                padding: EdgeInsets.only(
+                                  right: ResponsiveUtils.spacing(
+                                    context,
+                                    base: isTablet ? 12 : 8,
+                                  ),
+                                ),
+                                child: ActionChip(
+                                  label: Text(
+                                    text,
+                                    style: TextStyle(
+                                      fontSize: ResponsiveUtils.fontSize(
+                                        context,
+                                        isTablet ? 14 : 12,
+                                      ),
+                                    ),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: ResponsiveUtils.spacing(
+                                      context,
+                                      base: isTablet ? 12 : 8,
+                                    ),
+                                    vertical: ResponsiveUtils.spacing(
+                                      context,
+                                      base: isTablet ? 6 : 4,
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    await ref
+                                        .read(chatControllerProvider.notifier)
+                                        .send(text);
+                                    
+                                    // Scroll setelah mengirim pesan
+                                    await Future<void>.delayed(const Duration(milliseconds: 300));
+                                    _scrollToBottom();
+                                  },
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                  ),
+                ),
+              ),
+              
               // Input Field - Responsive
               Padding(
                 padding: EdgeInsets.fromLTRB(
