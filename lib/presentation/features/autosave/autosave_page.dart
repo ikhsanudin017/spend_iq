@@ -66,7 +66,9 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
   Widget build(BuildContext context) {
     final autosave = ref.watch(autosaveControllerProvider);
     final theme = Theme.of(context);
-    final responsive = ResponsiveUtils(context);
+    final horizontalPad = ResponsiveUtils.horizontalPadding(context);
+    final verticalPad = ResponsiveUtils.verticalPadding(context);
+    final screenHeight = ResponsiveUtils.screenHeight(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -96,10 +98,10 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
-                    responsive.hp(2.5),
-                    responsive.hp(2),
-                    responsive.hp(2.5),
-                    responsive.hp(3),
+                    horizontalPad,
+                    verticalPad,
+                    horizontalPad,
+                    verticalPad * 1.5,
                   ),
                   children: [
                     _AutosaveHeroCard(
@@ -227,10 +229,10 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
               ),
               SafeArea(
                 minimum: EdgeInsets.fromLTRB(
-                  responsive.hp(2.5),
-                  responsive.hp(1.5),
-                  responsive.hp(2.5),
-                  responsive.hp(3),
+                  horizontalPad,
+                  verticalPad * 0.75,
+                  horizontalPad,
+                  verticalPad * 1.5,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -266,10 +268,10 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                       icon: const Icon(Icons.add_rounded),
                       label: const Text('Tambah Jadwal'),
                       style: OutlinedButton.styleFrom(
-                        minimumSize: Size.fromHeight(responsive.hp(6.5)),
+                        minimumSize: const Size.fromHeight(50),
                       ),
                     ),
-                    SizedBox(height: responsive.hp(1.5)),
+                    SizedBox(height: verticalPad),
                     Builder(
                       builder: (context) {
                         final totalBalance = ref.watch(totalBalanceProvider);
@@ -278,7 +280,7 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                         
                         return FilledButton(
                           style: FilledButton.styleFrom(
-                            minimumSize: Size.fromHeight(responsive.hp(7)),
+                            minimumSize: const Size.fromHeight(56),
                             backgroundColor: canSave 
                                 ? theme.colorScheme.primary
                                 : theme.colorScheme.error,
@@ -316,7 +318,6 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                                 : _plans.isEmpty
                                     ? 'Tambahkan Jadwal Terlebih Dahulu'
                                     : 'Simpan Rencana Autosave',
-                            style: TextStyle(fontSize: responsive.sp(2)),
                           ),
                         );
                       },
@@ -391,7 +392,7 @@ class _AutosaveHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final responsive = ResponsiveUtils(context);
+    final padding = ResponsiveUtils.horizontalPadding(context);
     
     return Container(
       decoration: const BoxDecoration(
@@ -412,7 +413,7 @@ class _AutosaveHeroCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: EdgeInsets.all(responsive.hp(3)),
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -657,7 +658,8 @@ class _PlansSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final responsive = ResponsiveUtils(context);
+    final spacing = ResponsiveUtils.spacing(context);
+    final padding = ResponsiveUtils.horizontalPadding(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,11 +670,11 @@ class _PlansSection extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(height: responsive.hp(1.5)),
+        SizedBox(height: spacing),
         if (plans.isEmpty)
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(responsive.hp(2.5)),
+            padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
               color: AppColors.surfaceAlt,
               borderRadius: BorderRadius.circular(20),
@@ -690,8 +692,8 @@ class _PlansSection extends StatelessWidget {
               final formattedDate = DateUtilsX.formatFull(plan.date);
 
               return Container(
-                margin: EdgeInsets.only(bottom: responsive.hp(2)),
-                padding: EdgeInsets.all(responsive.hp(2.2)),
+                margin: EdgeInsets.only(bottom: spacing),
+                padding: EdgeInsets.all(padding * 0.9),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
@@ -710,18 +712,18 @@ class _PlansSection extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(responsive.hp(1.2)),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withAlpha(32),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.calendar_today_rounded,
                             color: AppColors.primary,
-                            size: responsive.hp(2.5),
+                            size: 20,
                           ),
                         ),
-                        SizedBox(width: responsive.hp(1.7)),
+                        SizedBox(width: spacing),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,7 +755,7 @@ class _PlansSection extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: responsive.hp(2)),
+                    SizedBox(height: spacing),
                     TextFormField(
                       key: ValueKey(
                         '${plan.date.toIso8601String()}-${plan.confirmed}',
@@ -776,7 +778,7 @@ class _PlansSection extends StatelessWidget {
                         onAmountChanged(index, parsed);
                       },
                     ),
-                    SizedBox(height: responsive.hp(1.5)),
+                    SizedBox(height: spacing * 0.75),
                     Row(
                       children: [
                         Checkbox.adaptive(
