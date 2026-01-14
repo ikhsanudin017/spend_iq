@@ -22,6 +22,7 @@ class AutosavePage extends ConsumerStatefulWidget {
 
 class _AutosavePageState extends ConsumerState<AutosavePage> {
   List<AutosavePlan> _plans = const [];
+  bool _hasUnsavedChanges = false;
 
   Future<AutosavePlan?> _showAddScheduleDialog(BuildContext context, List<DateTime> suggestedDays) async {
     DateTime selectedDate = suggestedDays.isNotEmpty 
@@ -174,6 +175,11 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
         }
       }
       
+      // Reset unsaved changes flag after successful save
+      setState(() {
+        _hasUnsavedChanges = false;
+      });
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -217,8 +223,15 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
       ),
       body: autosave.when(
         data: (data) {
-          if (_plans.isEmpty || _plans.length != data.plans.length) {
-            _plans = List<AutosavePlan>.from(data.plans);
+          // Only sync from provider if no unsaved changes
+          if (!_hasUnsavedChanges && (_plans.isEmpty || _plans.length != data.plans.length)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _plans = List<AutosavePlan>.from(data.plans);
+                });
+              }
+            });
           }
           final monthlyTotal = _plans.fold<double>(
             0,
@@ -265,6 +278,7 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                             ]..sort(
                                 (a, b) => a.date.compareTo(b.date),
                               );
+                            _hasUnsavedChanges = true;
                           }
                         });
                       },
@@ -281,6 +295,7 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                             updated,
                             ..._plans.skip(index + 1),
                           ];
+                          _hasUnsavedChanges = true;
                         });
                       },
                       onConfirmedChanged: (index, confirmed) {
@@ -292,6 +307,7 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                             updated,
                             ..._plans.skip(index + 1),
                           ];
+                          _hasUnsavedChanges = true;
                         });
                       },
                       onRemove: (index) async {
@@ -319,37 +335,25 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                         );
 
                         if (confirmed == true) {
-                          final updatedPlans = [
-                            ..._plans.take(index),
-                            ..._plans.skip(index + 1),
-                          ];
-                          
                           setState(() {
-                            _plans = updatedPlans;
+                            _plans = [
+                              ..._plans.take(index),
+                              ..._plans.skip(index + 1),
+                            ];
+                            _hasUnsavedChanges = true;
                           });
                           
-                          // Save to backend immediately after delete
-                          try {
-                            await ref.read(autosaveControllerProvider.notifier).savePlans(updatedPlans);
-                            
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Jadwal berhasil dihapus'),
-                                  duration: Duration(seconds: 2),
-                                  backgroundColor: Colors.green,
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Jadwal dihapus. Klik "Simpan" untuk menyimpan ke database.'),
+                                duration: const Duration(seconds: 3),
+                                action: SnackBarAction(
+                                  label: 'OK',
+                                  onPressed: () {},
                                 ),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Gagal menghapus: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
+                              ),
+                            );
                           }
                         }
                       },
@@ -370,6 +374,7 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                               amount: 200000,
                             ),
                           ]..sort((a, b) => a.date.compareTo(b.date));
+                          _hasUnsavedChanges = true;
                         });
                       },
                     ),
@@ -395,13 +400,18 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                               ..._plans,
                               result,
                             ]..sort((a, b) => a.date.compareTo(b.date));
+                            _hasUnsavedChanges = true;
                           });
                           
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Jadwal baru ditambahkan'),
-                                duration: Duration(seconds: 2),
+                              SnackBar(
+                                content: const Text('Jadwal ditambahkan. Klik "Simpan" untuk menyimpan ke database.'),
+                                duration: const Duration(seconds: 3),
+                                action: SnackBarAction(
+                                  label: 'OK',
+                                  onPressed: () {},
+                                ),
                               ),
                             );
                           }
@@ -420,47 +430,81 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                         final canSave = _plans.isNotEmpty && 
                             (totalBalance == 0 || monthlyTotal <= totalBalance * 0.6);
                         
-                        return FilledButton(
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(56),
-                            backgroundColor: canSave 
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.error,
-                          ),
-                          onPressed: canSave
-                              ? () {
-                                  _handleStartAutosave(monthlyTotal);
-                                  // Show loading indicator briefly
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor: AlwaysStoppedAnimation<Color>(
-                                                theme.colorScheme.onPrimary,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          const Text('Menyimpan rencana autosave...'),
-                                        ],
-                                      ),
-                                      duration: const Duration(seconds: 1),
+                        return Column(
+                          children: [
+                            if (_hasUnsavedChanges)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 16,
+                                      color: theme.colorScheme.onSecondaryContainer,
                                     ),
-                                  );
-                                }
-                              : null,
-                          child: Text(
-                            data.enabled 
-                                ? 'Simpan Perubahan' 
-                                : _plans.isEmpty
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Ada perubahan yang belum disimpan',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSecondaryContainer,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(56),
+                                backgroundColor: canSave 
+                                    ? (_hasUnsavedChanges ? theme.colorScheme.primary : theme.colorScheme.primary.withOpacity(0.7))
+                                    : theme.colorScheme.error,
+                              ),
+                              onPressed: canSave
+                                  ? () {
+                                      _handleStartAutosave(monthlyTotal);
+                                      // Show loading indicator briefly
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                                    theme.colorScheme.onPrimary,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              const Text('Menyimpan ke database...'),
+                                            ],
+                                          ),
+                                          duration: const Duration(seconds: 1),
+                                        ),
+                                      );
+                                    }
+                                  : null,
+                              icon: Icon(_hasUnsavedChanges ? Icons.save : Icons.check_circle_outline),
+                              label: Text(
+                                _plans.isEmpty
                                     ? 'Tambahkan Jadwal Terlebih Dahulu'
-                                    : 'Simpan Rencana Autosave',
-                          ),
+                                    : _hasUnsavedChanges
+                                        ? 'Simpan Perubahan ke Database'
+                                        : 'Tersimpan',
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
