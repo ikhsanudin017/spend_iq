@@ -23,6 +23,138 @@ class AutosavePage extends ConsumerStatefulWidget {
 class _AutosavePageState extends ConsumerState<AutosavePage> {
   List<AutosavePlan> _plans = const [];
 
+  Future<AutosavePlan?> _showAddScheduleDialog(BuildContext context, List<DateTime> suggestedDays) async {
+    DateTime selectedDate = suggestedDays.isNotEmpty 
+        ? suggestedDays.first 
+        : DateTime.now().add(const Duration(days: 3));
+    final TextEditingController amountController = TextEditingController(text: '250000');
+    
+    return showDialog<AutosavePlan>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Tambah Jadwal Autosave'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (suggestedDays.isNotEmpty) ...[
+                      const Text(
+                        'Rekomendasi Hari Aman',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: suggestedDays.take(4).map((day) {
+                          final isSelected = DateUtilsX.isSameDay(day, selectedDate);
+                          return ChoiceChip(
+                            label: Text(DateUtilsX.formatShort(day)),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setDialogState(() {
+                                  selectedDate = day;
+                                });
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    const Text(
+                      'Atau Pilih Tanggal Manual',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            selectedDate = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Theme.of(context).colorScheme.outline),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                DateUtilsX.formatFull(selectedDate),
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Nominal Tabungan',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: amountController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nominal',
+                        prefixText: 'Rp ',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Batal'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final amount = double.tryParse(
+                      amountController.text.replaceAll(RegExp(r'[^0-9]'), '')
+                    ) ?? 250000;
+                    
+                    Navigator.pop(
+                      context,
+                      AutosavePlan(
+                        date: DateUtilsX.startOfDay(selectedDate),
+                        amount: amount,
+                      ),
+                    );
+                  },
+                  child: const Text('Tambah'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _handleStartAutosave(double monthlyTotal) async {
     final plansSnapshot = List<AutosavePlan>.from(_plans);
     final notifier = ref.read(autosaveControllerProvider.notifier);
@@ -187,20 +319,37 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                         );
 
                         if (confirmed == true) {
+                          final updatedPlans = [
+                            ..._plans.take(index),
+                            ..._plans.skip(index + 1),
+                          ];
+                          
                           setState(() {
-                            _plans = [
-                              ..._plans.take(index),
-                              ..._plans.skip(index + 1),
-                            ];
+                            _plans = updatedPlans;
                           });
                           
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Jadwal berhasil dihapus'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                          // Save to backend immediately after delete
+                          try {
+                            await ref.read(autosaveControllerProvider.notifier).savePlans(updatedPlans);
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Jadwal berhasil dihapus'),
+                                  duration: Duration(seconds: 2),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Gagal menghapus: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
                         }
                       },
@@ -238,32 +387,25 @@ class _AutosavePageState extends ConsumerState<AutosavePage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          // Find next safe day from suggestions if available
-                          final nextSafeDay = data.suggestedDays.isNotEmpty
-                              ? data.suggestedDays.firstWhere(
-                                  (day) => !_plans.any((p) => DateUtilsX.isSameDay(p.date, day)),
-                                  orElse: () => DateTime.now().add(const Duration(days: 3)),
-                                )
-                              : DateTime.now().add(const Duration(days: 3));
+                      onPressed: () async {
+                        final result = await _showAddScheduleDialog(context, data.suggestedDays);
+                        if (result != null) {
+                          setState(() {
+                            _plans = [
+                              ..._plans,
+                              result,
+                            ]..sort((a, b) => a.date.compareTo(b.date));
+                          });
                           
-                          _plans = [
-                            ..._plans,
-                            AutosavePlan(
-                              date: DateUtilsX.startOfDay(nextSafeDay),
-                              amount: 200000,
-                            ),
-                          ]..sort((a, b) => a.date.compareTo(b.date));
-                        });
-                        
-                        // Show feedback
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Jadwal baru ditambahkan'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Jadwal baru ditambahkan'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
                       },
                       icon: const Icon(Icons.add_rounded),
                       label: const Text('Tambah Jadwal'),
